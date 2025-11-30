@@ -222,10 +222,20 @@ python3 upscale.py -i ./photos -o ./upscaled_photos -q 98
 **AI upscaling import errors**:
 
 If you see `No module named 'torchvision.transforms.functional_tensor'`:
-- This means you have incompatible PyTorch/torchvision versions
-- Solution: Reinstall with compatible versions:
+- This is a PyTorch/torchvision compatibility issue with basicsr
+- **Solution:** Reinstall with the correct compatible versions:
   ```bash
+  # Uninstall existing PyTorch packages
   pip uninstall torch torchvision -y
+
+  # Reinstall with compatible versions
+  pip install -r requirements-ai.txt
+  ```
+- The requirements-ai.txt uses torch 1.13.1 and torchvision 0.14.1, which are tested to work with basicsr 1.4.2
+- If the error persists after reinstalling, try:
+  ```bash
+  # Clean reinstall
+  pip uninstall realesrgan basicsr facexlib gfpgan torch torchvision -y
   pip install -r requirements-ai.txt
   ```
 

@@ -1,9 +1,11 @@
 # AI Upscaling Dependencies for Real-ESRGAN
 # Compatible versions of PyTorch and torchvision for basicsr 1.4.2
 
-# Core PyTorch packages (compatible versions)
-torch==2.0.1
-torchvision==0.15.2
+# Core PyTorch packages (tested compatible versions)
+# Note: torch 2.0+ has compatibility issues with basicsr 1.4.2
+# Using torch 1.13.1 avoids the 'functional_tensor' module error
+torch==1.13.1
+torchvision==0.14.1
 
 # Real-ESRGAN and dependencies
 realesrgan==0.3.0
