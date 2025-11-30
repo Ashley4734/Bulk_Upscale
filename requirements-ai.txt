@@ -2,10 +2,11 @@
 # Compatible versions of PyTorch and torchvision for basicsr 1.4.2 on Python 3.11+
 
 # Core PyTorch packages (tested compatible versions)
-# torch 2.9.x provides prebuilt wheels for Python 3.11 while remaining compatible
-# with basicsr 1.4.2 and realesrgan 0.3.x
+# torch 2.9.x ships wheels for Python 3.11–3.13 while remaining compatible with
+# basicsr 1.4.2 and realesrgan 0.3.x. torchvision 0.24.1 matches torch 2.9.1 and
+# provides Python 3.13 wheels, avoiding install failures on newer interpreters.
 torch==2.9.1
-torchvision==0.20.1
+torchvision==0.24.1
 
 # Real-ESRGAN and dependencies
 realesrgan==0.3.0
