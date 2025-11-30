@@ -1,0 +1,233 @@
+#!/usr/bin/env python3
+"""
+Bulk Image Upscaler
+A simple yet powerful tool to upscale multiple images at once.
+"""
+
+import argparse
+import os
+import sys
+from pathlib import Path
+from PIL import Image
+import concurrent.futures
+from typing import List, Tuple
+
+# Supported image formats
+SUPPORTED_FORMATS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp'}
+
+# Resampling methods
+RESAMPLING_METHODS = {
+    'lanczos': Image.Resampling.LANCZOS,
+    'bicubic': Image.Resampling.BICUBIC,
+    'bilinear': Image.Resampling.BILINEAR,
+    'nearest': Image.Resampling.NEAREST,
+}
+
+
+class ImageUpscaler:
+    """Handles bulk image upscaling operations."""
+
+    def __init__(self, scale_factor: float = 2.0, method: str = 'lanczos',
+                 quality: int = 95, workers: int = 4):
+        """
+        Initialize the upscaler.
+
+        Args:
+            scale_factor: Factor by which to upscale images (e.g., 2.0 for 2x)
+            method: Resampling method ('lanczos', 'bicubic', 'bilinear', 'nearest')
+            quality: JPEG quality for output (1-100)
+            workers: Number of parallel workers for processing
+        """
+        self.scale_factor = scale_factor
+        self.method = RESAMPLING_METHODS.get(method.lower(), Image.Resampling.LANCZOS)
+        self.quality = max(1, min(100, quality))
+        self.workers = workers
+
+    def upscale_image(self, input_path: Path, output_path: Path) -> Tuple[bool, str]:
+        """
+        Upscale a single image.
+
+        Args:
+            input_path: Path to input image
+            output_path: Path to save upscaled image
+
+        Returns:
+            Tuple of (success, message)
+        """
+        try:
+            # Open image
+            with Image.open(input_path) as img:
+                # Convert RGBA to RGB if saving as JPEG
+                if output_path.suffix.lower() in {'.jpg', '.jpeg'} and img.mode == 'RGBA':
+                    # Create white background
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    background.paste(img, mask=img.split()[3] if len(img.split()) == 4 else None)
+                    img = background
+
+                # Calculate new dimensions
+                new_width = int(img.width * self.scale_factor)
+                new_height = int(img.height * self.scale_factor)
+
+                # Upscale
+                upscaled = img.resize((new_width, new_height), self.method)
+
+                # Save with appropriate settings
+                save_kwargs = {}
+                if output_path.suffix.lower() in {'.jpg', '.jpeg'}:
+                    save_kwargs['quality'] = self.quality
+                    save_kwargs['optimize'] = True
+                elif output_path.suffix.lower() == '.png':
+                    save_kwargs['optimize'] = True
+
+                upscaled.save(output_path, **save_kwargs)
+
+            return True, f"✓ Upscaled: {input_path.name} ({img.width}x{img.height} → {new_width}x{new_height})"
+
+        except Exception as e:
+            return False, f"✗ Failed: {input_path.name} - {str(e)}"
+
+    def process_directory(self, input_dir: Path, output_dir: Path,
+                         recursive: bool = False) -> None:
+        """
+        Process all images in a directory.
+
+        Args:
+            input_dir: Directory containing images to upscale
+            output_dir: Directory to save upscaled images
+            recursive: Whether to process subdirectories
+        """
+        # Create output directory if it doesn't exist
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Find all images
+        if recursive:
+            image_files = []
+            for ext in SUPPORTED_FORMATS:
+                image_files.extend(input_dir.rglob(f'*{ext}'))
+                image_files.extend(input_dir.rglob(f'*{ext.upper()}'))
+        else:
+            image_files = []
+            for ext in SUPPORTED_FORMATS:
+                image_files.extend(input_dir.glob(f'*{ext}'))
+                image_files.extend(input_dir.glob(f'*{ext.upper()}'))
+
+        if not image_files:
+            print(f"No images found in {input_dir}")
+            return
+
+        print(f"Found {len(image_files)} image(s) to process")
+        print(f"Scale factor: {self.scale_factor}x")
+        print(f"Method: {[k for k, v in RESAMPLING_METHODS.items() if v == self.method][0]}")
+        print(f"Workers: {self.workers}")
+        print("-" * 60)
+
+        # Process images in parallel
+        tasks = []
+        for img_path in image_files:
+            # Preserve relative directory structure if recursive
+            if recursive:
+                relative_path = img_path.relative_to(input_dir)
+                out_path = output_dir / relative_path
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+            else:
+                out_path = output_dir / img_path.name
+
+            tasks.append((img_path, out_path))
+
+        # Execute with progress
+        success_count = 0
+        fail_count = 0
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.workers) as executor:
+            futures = {executor.submit(self.upscale_image, inp, out): (inp, out)
+                      for inp, out in tasks}
+
+            for future in concurrent.futures.as_completed(futures):
+                success, message = future.result()
+                print(message)
+                if success:
+                    success_count += 1
+                else:
+                    fail_count += 1
+
+        print("-" * 60)
+        print(f"Completed: {success_count} succeeded, {fail_count} failed")
+        print(f"Output directory: {output_dir}")
+
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(
+        description='Bulk Image Upscaler - Upscale multiple images at once',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Upscale all images in current directory by 2x
+  python upscale.py -i ./images -o ./output
+
+  # Upscale by 4x with bicubic interpolation
+  python upscale.py -i ./images -o ./output -s 4 -m bicubic
+
+  # Process subdirectories recursively
+  python upscale.py -i ./images -o ./output -r
+
+  # Use 8 parallel workers for faster processing
+  python upscale.py -i ./images -o ./output -w 8
+        """
+    )
+
+    parser.add_argument('-i', '--input', type=str, required=True,
+                       help='Input directory containing images')
+    parser.add_argument('-o', '--output', type=str, required=True,
+                       help='Output directory for upscaled images')
+    parser.add_argument('-s', '--scale', type=float, default=2.0,
+                       help='Scale factor (default: 2.0)')
+    parser.add_argument('-m', '--method', type=str, default='lanczos',
+                       choices=['lanczos', 'bicubic', 'bilinear', 'nearest'],
+                       help='Resampling method (default: lanczos)')
+    parser.add_argument('-q', '--quality', type=int, default=95,
+                       help='JPEG quality 1-100 (default: 95)')
+    parser.add_argument('-r', '--recursive', action='store_true',
+                       help='Process subdirectories recursively')
+    parser.add_argument('-w', '--workers', type=int, default=4,
+                       help='Number of parallel workers (default: 4)')
+
+    args = parser.parse_args()
+
+    # Validate paths
+    input_dir = Path(args.input).expanduser().resolve()
+    output_dir = Path(args.output).expanduser().resolve()
+
+    if not input_dir.exists():
+        print(f"Error: Input directory '{input_dir}' does not exist")
+        sys.exit(1)
+
+    if not input_dir.is_dir():
+        print(f"Error: Input path '{input_dir}' is not a directory")
+        sys.exit(1)
+
+    if args.scale <= 0:
+        print("Error: Scale factor must be positive")
+        sys.exit(1)
+
+    # Warn if input and output are the same
+    if input_dir == output_dir:
+        print("Warning: Input and output directories are the same. This will overwrite original images!")
+        response = input("Continue? (y/N): ")
+        if response.lower() != 'y':
+            print("Aborted")
+            sys.exit(0)
+
+    # Create upscaler and process
+    upscaler = ImageUpscaler(
+        scale_factor=args.scale,
+        method=args.method,
+        quality=args.quality,
+        workers=args.workers
+    )
+
+    upscaler.process_directory(input_dir, output_dir, args.recursive)
+
+
+if __name__ == '__main__':
+    main()
