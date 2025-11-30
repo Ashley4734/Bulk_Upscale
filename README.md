@@ -45,10 +45,10 @@ A fast, efficient command-line tool for upscaling multiple images at once on mac
 
    **For AI upscaling** (recommended for best quality):
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements-ai.txt
    ```
 
-   Note: AI upscaling requires PyTorch and Real-ESRGAN, which will download ~500MB of packages. The AI model weights (~17MB for x4, ~11MB for x2) will be automatically downloaded on first use.
+   Note: AI upscaling requires specific versions of PyTorch and torchvision for compatibility with basicsr. The requirements-ai.txt file includes tested, compatible versions. This will download ~500MB of packages. The AI model weights (~17MB for x4, ~11MB for x2) will be automatically downloaded on first use.
 
 4. **Make the script executable (optional):**
    ```bash
@@ -219,7 +219,20 @@ python3 upscale.py -i ./photos -o ./upscaled_photos -q 98
 
 **RGBA/RGB warnings**: The tool automatically converts RGBA images to RGB when saving as JPEG
 
-**AI upscaling import errors**: Install AI dependencies with `pip install -r requirements.txt`
+**AI upscaling import errors**:
+
+If you see `No module named 'torchvision.transforms.functional_tensor'`:
+- This means you have incompatible PyTorch/torchvision versions
+- Solution: Reinstall with compatible versions:
+  ```bash
+  pip uninstall torch torchvision -y
+  pip install -r requirements-ai.txt
+  ```
+
+For other import errors, install AI dependencies with:
+```bash
+pip install -r requirements-ai.txt
+```
 
 **Python 3.13 compatibility issues** (`basicsr` KeyError during installation):
 Python 3.13 is not yet supported by the AI upscaling libraries. To fix:
