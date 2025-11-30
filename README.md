@@ -17,7 +17,9 @@ A fast, efficient command-line tool for upscaling multiple images at once on mac
 
 ### Prerequisites
 
-- Python 3.7 or higher (macOS comes with Python 3 pre-installed)
+- **Python 3.11 or 3.12** (recommended for AI upscaling compatibility)
+  - **Important:** Python 3.13 is not yet supported due to AI library compatibility issues
+  - Python 3.7+ works for traditional upscaling only (without --ai flag)
 - pip (Python package manager)
 
 ### Setup
@@ -218,6 +220,32 @@ python3 upscale.py -i ./photos -o ./upscaled_photos -q 98
 **RGBA/RGB warnings**: The tool automatically converts RGBA images to RGB when saving as JPEG
 
 **AI upscaling import errors**: Install AI dependencies with `pip install -r requirements.txt`
+
+**Python 3.13 compatibility issues** (`basicsr` KeyError during installation):
+Python 3.13 is not yet supported by the AI upscaling libraries. To fix:
+
+1. Check which Python versions you have:
+   ```bash
+   ls /Library/Frameworks/Python.framework/Versions/
+   # or
+   brew list | grep python
+   ```
+
+2. Create a new virtual environment with Python 3.11 or 3.12:
+   ```bash
+   # If you have Python 3.12 installed via Homebrew:
+   brew install python@3.12
+   python3.12 -m venv venv
+
+   # Or if you have Python 3.11:
+   python3.11 -m venv venv
+   ```
+
+3. Activate and install dependencies:
+   ```bash
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
 **Slow AI upscaling**: This is normal on CPU. For faster processing, use an NVIDIA GPU or switch to traditional upscaling
 
