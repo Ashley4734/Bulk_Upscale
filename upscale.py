@@ -11,6 +11,7 @@ from pathlib import Path
 from PIL import Image
 import concurrent.futures
 from typing import List, Tuple
+import urllib.request
 import config
 import cv2
 import numpy as np
@@ -94,13 +95,18 @@ class ImageUpscaler:
             model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
             netscale = 4
 
-        # Model download paths (will auto-download)
+        # Model download paths (auto-download if missing)
         model_urls = {
             'RealESRGAN_x4plus': 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth',
             'RealESRGAN_x2plus': 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
+            'realesr-animevideov3': 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-animevideov3.pth',
         }
 
-        model_path = model_urls.get(model_name)
+        model_url = model_urls.get(model_name)
+        if model_url is None:
+            raise ValueError(f"Unsupported AI model '{self.ai_model}'.")
+
+        model_path = self._download_model(model_name, model_url)
 
         # Initialize upsampler
         self.upsampler = RealESRGANer(
@@ -112,6 +118,19 @@ class ImageUpscaler:
             pre_pad=0,
             half=False  # Set to True if using GPU with FP16 support
         )
+
+    def _download_model(self, model_name: str, model_url: str) -> Path:
+        """Ensure the requested model weights are available locally."""
+        cache_dir = Path.home() / '.cache' / 'realesrgan'
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        model_path = cache_dir / Path(model_url).name
+
+        if not model_path.exists():
+            print(f"Downloading {model_name} model weights...")
+            urllib.request.urlretrieve(model_url, model_path)
+
+        return model_path
 
     def upscale_image(self, input_path: Path, output_path: Path) -> Tuple[bool, str]:
         """
