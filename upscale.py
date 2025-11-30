@@ -11,6 +11,7 @@ from pathlib import Path
 from PIL import Image
 import concurrent.futures
 from typing import List, Tuple
+import config
 
 # Supported image formats
 SUPPORTED_FORMATS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp'}
@@ -176,10 +177,10 @@ Examples:
         """
     )
 
-    parser.add_argument('-i', '--input', type=str, required=True,
-                       help='Input directory containing images')
-    parser.add_argument('-o', '--output', type=str, required=True,
-                       help='Output directory for upscaled images')
+    parser.add_argument('-i', '--input', type=str, required=False,
+                       help=f'Input directory containing images (default: {config.DEFAULT_IMAGE_PATH})')
+    parser.add_argument('-o', '--output', type=str, required=False,
+                       help='Output directory for upscaled images (default: <input_dir>_upscaled)')
     parser.add_argument('-s', '--scale', type=float, default=2.0,
                        help='Scale factor (default: 2.0)')
     parser.add_argument('-m', '--method', type=str, default='lanczos',
@@ -194,9 +195,22 @@ Examples:
 
     args = parser.parse_args()
 
+    # Use configured default path if no input provided
+    if args.input is None:
+        input_path = config.DEFAULT_IMAGE_PATH
+        print(f"Using configured default image path: {input_path}")
+    else:
+        input_path = args.input
+
     # Validate paths
-    input_dir = Path(args.input).expanduser().resolve()
-    output_dir = Path(args.output).expanduser().resolve()
+    input_dir = Path(input_path).expanduser().resolve()
+
+    # Use default output path if not provided
+    if args.output is None:
+        output_dir = Path(str(input_dir) + config.DEFAULT_OUTPUT_SUFFIX)
+        print(f"Using default output directory: {output_dir}")
+    else:
+        output_dir = Path(args.output).expanduser().resolve()
 
     if not input_dir.exists():
         print(f"Error: Input directory '{input_dir}' does not exist")
