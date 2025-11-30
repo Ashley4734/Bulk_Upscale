@@ -22,23 +22,40 @@ A fast, efficient command-line tool for upscaling multiple images at once on mac
 ### Setup
 
 1. **Clone or download this repository**
-
-2. **Install dependencies:**
    ```bash
-   pip3 install -r requirements.txt
+   git clone https://github.com/Ashley4734/Bulk_Upscale.git
+   cd Bulk_Upscale
+   ```
+
+2. **Create a virtual environment (recommended for macOS/modern Python):**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
    ```
 
    Or install Pillow directly:
    ```bash
-   pip3 install Pillow
+   pip install Pillow
    ```
 
-3. **Make the script executable (optional):**
+4. **Make the script executable (optional):**
    ```bash
    chmod +x upscale.py
    ```
 
+**Note for macOS users:** Modern macOS systems require using a virtual environment for Python packages. If you get an "externally-managed-environment" error, make sure you've activated the virtual environment with `source venv/bin/activate` before installing packages.
+
 ## Usage
+
+**Important:** If you're using a virtual environment, make sure to activate it first:
+```bash
+source venv/bin/activate
+```
 
 ### Basic Usage
 
