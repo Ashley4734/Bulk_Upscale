@@ -1,0 +1,17 @@
+# AI Upscaling Dependencies for Real-ESRGAN
+# Compatible versions of PyTorch and torchvision for basicsr 1.4.2
+
+# Core PyTorch packages (compatible versions)
+torch==2.0.1
+torchvision==0.15.2
+
+# Real-ESRGAN and dependencies
+realesrgan==0.3.0
+basicsr==1.4.2
+facexlib==0.3.0
+gfpgan==1.3.8
+
+# Additional dependencies
+opencv-python>=4.5.0
+numpy<2.0.0
+Pillow>=8.0.0
