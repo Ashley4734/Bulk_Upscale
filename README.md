@@ -48,7 +48,7 @@ A fast, efficient command-line tool for upscaling multiple images at once on mac
    pip install -r requirements-ai.txt
    ```
 
-   Note: AI upscaling requires specific versions of PyTorch and torchvision for compatibility with basicsr. The requirements-ai.txt file includes tested, compatible versions. This will download ~500MB of packages. The AI model weights (~17MB for x4, ~11MB for x2) will be automatically downloaded on first use.
+   Note: AI upscaling requires specific versions of PyTorch and torchvision for compatibility with basicsr. The requirements-ai.txt file includes tested, compatible versions (torch 2.9.1 + torchvision 0.24.1) that ship wheels for Python 3.11–3.13. This will download ~500MB of packages. The AI model weights (~17MB for x4, ~11MB for x2) will be automatically downloaded on first use.
 
 4. **Make the script executable (optional):**
    ```bash
@@ -231,7 +231,7 @@ If you see `No module named 'torchvision.transforms.functional_tensor'`:
   # Reinstall with compatible versions
   pip install -r requirements-ai.txt
   ```
-- The requirements-ai.txt uses torch 1.13.1 and torchvision 0.14.1, which are tested to work with basicsr 1.4.2
+- The requirements-ai.txt uses torch 2.9.1 and torchvision 0.24.1, which are tested to work with basicsr 1.4.2 on Python 3.11–3.13
 - If the error persists after reinstalling, try:
   ```bash
   # Clean reinstall
@@ -244,30 +244,26 @@ For other import errors, install AI dependencies with:
 pip install -r requirements-ai.txt
 ```
 
-**Python 3.13 compatibility issues** (`basicsr` KeyError during installation):
-Python 3.13 is not yet supported by the AI upscaling libraries. To fix:
+**Python 3.13 compatibility issues** (install errors from missing torchvision wheels):
+Python 3.13 is supported when using the torch 2.9.1 / torchvision 0.24.1 pairing in `requirements-ai.txt`. If you see pip error messages about unavailable torchvision versions:
 
-1. Check which Python versions you have:
+1. Make sure you're using the updated requirements:
    ```bash
-   ls /Library/Frameworks/Python.framework/Versions/
-   # or
-   brew list | grep python
+   pip install -U pip
+   pip install -r requirements-ai.txt
    ```
 
-2. Create a new virtual environment with Python 3.11 or 3.12:
+2. If you previously installed older AI dependencies, clean up and reinstall:
    ```bash
-   # If you have Python 3.12 installed via Homebrew:
-   brew install python@3.12
+   pip uninstall torch torchvision basicsr realesrgan facexlib gfpgan -y
+   pip install -r requirements-ai.txt
+   ```
+
+3. If installation still fails on your platform, try Python 3.12 or 3.11 as a fallback:
+   ```bash
    python3.12 -m venv venv
-
-   # Or if you have Python 3.11:
-   python3.11 -m venv venv
-   ```
-
-3. Activate and install dependencies:
-   ```bash
    source venv/bin/activate
-   pip install -r requirements.txt
+   pip install -r requirements-ai.txt
    ```
 
 **Slow AI upscaling**: This is normal on CPU. For faster processing, use an NVIDIA GPU or switch to traditional upscaling
