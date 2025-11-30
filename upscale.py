@@ -112,12 +112,13 @@ class ImageUpscaler:
 
         model_path = self._download_model(model_name, model_url)
 
-        # Initialize upsampler
+        # Initialize upsampler with tiling for memory efficiency
+        # Tile size 400 processes image in smaller chunks to prevent OOM on systems with limited RAM
         self.upsampler = RealESRGANer(
             scale=netscale,
             model_path=str(model_path),
             model=model,
-            tile=0,  # 0 for no tiling, or set to 400-800 for GPU memory constraints
+            tile=400,  # Process in 400x400 tiles to reduce memory usage
             tile_pad=10,
             pre_pad=0,
             half=False  # Set to True if using GPU with FP16 support
