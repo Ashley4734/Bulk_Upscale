@@ -13,8 +13,6 @@ import concurrent.futures
 from typing import List, Tuple
 import urllib.request
 import config
-import cv2
-import numpy as np
 
 # Supported image formats
 SUPPORTED_FORMATS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp'}
@@ -111,7 +109,7 @@ class ImageUpscaler:
         # Initialize upsampler
         self.upsampler = RealESRGANer(
             scale=netscale,
-            model_path=model_path,
+            model_path=str(model_path),
             model=model,
             tile=0,  # 0 for no tiling, or set to 400-800 for GPU memory constraints
             tile_pad=10,
@@ -153,6 +151,9 @@ class ImageUpscaler:
 
     def _upscale_with_ai(self, input_path: Path, output_path: Path) -> Tuple[bool, str]:
         """Upscale using AI (Real-ESRGAN)."""
+        import cv2
+        import numpy as np
+
         # Read image with OpenCV
         img = cv2.imread(str(input_path), cv2.IMREAD_UNCHANGED)
         if img is None:
