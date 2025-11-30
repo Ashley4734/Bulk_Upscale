@@ -50,6 +50,32 @@ A fast, efficient command-line tool for upscaling multiple images at once on mac
 
 **Note for macOS users:** Modern macOS systems require using a virtual environment for Python packages. If you get an "externally-managed-environment" error, make sure you've activated the virtual environment with `source venv/bin/activate` before installing packages.
 
+## Configuration
+
+You can configure a default image storage path by editing the `config.py` file:
+
+```python
+# Default image storage path
+DEFAULT_IMAGE_PATH = "/Users/ashleyharris/Desktop/Etsy_Business_Mockups"
+```
+
+With this configured, you can run the upscaler without specifying the input directory:
+
+```bash
+# Uses the configured default path
+python3 upscale.py
+
+# Output directory defaults to <input_dir>_upscaled
+# You can still override with -o flag
+python3 upscale.py -o ./my_custom_output
+```
+
+You can still override the configured path with the `-i` flag:
+
+```bash
+python3 upscale.py -i ./different_folder
+```
+
 ## Usage
 
 **Important:** If you're using a virtual environment, make sure to activate it first:
@@ -60,6 +86,10 @@ source venv/bin/activate
 ### Basic Usage
 
 ```bash
+# With configured default path (see Configuration section)
+python3 upscale.py
+
+# Or specify input and output directories
 python3 upscale.py -i <input_directory> -o <output_directory>
 ```
 
@@ -94,8 +124,8 @@ python3 upscale.py -i ./photos -o ./upscaled_photos -q 98
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-i, --input` | Input directory containing images | Required |
-| `-o, --output` | Output directory for upscaled images | Required |
+| `-i, --input` | Input directory containing images | Configured in config.py |
+| `-o, --output` | Output directory for upscaled images | `<input_dir>_upscaled` |
 | `-s, --scale` | Scale factor (e.g., 2.0 for 2x, 4.0 for 4x) | 2.0 |
 | `-m, --method` | Resampling method: `lanczos`, `bicubic`, `bilinear`, `nearest` | lanczos |
 | `-q, --quality` | JPEG quality (1-100) | 95 |
