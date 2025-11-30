@@ -63,10 +63,16 @@ class ImageUpscaler:
         self.scale_factor = scale_factor
         self.method = RESAMPLING_METHODS.get(method.lower(), Image.Resampling.LANCZOS)
         self.quality = max(1, min(100, quality))
-        self.workers = workers
         self.use_ai = use_ai
         self.ai_model = ai_model
         self.upsampler = None
+
+        # For AI upscaling, force single worker to avoid memory issues
+        # (each worker would load its own copy of the AI model, consuming several GB)
+        if self.use_ai:
+            self.workers = 1
+        else:
+            self.workers = workers
 
         # Initialize AI upscaler if requested
         if self.use_ai:
@@ -241,10 +247,11 @@ class ImageUpscaler:
         if self.use_ai:
             print(f"Mode: AI Upscaling ({self.ai_model})")
             print(f"Scale: {self.upsampler.scale}x (determined by model)")
+            print(f"Workers: {self.workers} (AI mode processes sequentially to avoid memory issues)")
         else:
             print(f"Mode: Traditional ({[k for k, v in RESAMPLING_METHODS.items() if v == self.method][0]})")
             print(f"Scale factor: {self.scale_factor}x")
-        print(f"Workers: {self.workers}")
+            print(f"Workers: {self.workers}")
         print("-" * 60)
 
         # Process images in parallel
