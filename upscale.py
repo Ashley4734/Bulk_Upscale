@@ -38,8 +38,10 @@ try:
     from basicsr.archs.rrdbnet_arch import RRDBNet
     from realesrgan import RealESRGANer
     AI_AVAILABLE = True
-except ImportError:
+    IMPORT_ERROR_MSG = None
+except ImportError as e:
     AI_AVAILABLE = False
+    IMPORT_ERROR_MSG = str(e)
 
 
 class ImageUpscaler:
@@ -70,10 +72,11 @@ class ImageUpscaler:
         # Initialize AI upscaler if requested
         if self.use_ai:
             if not AI_AVAILABLE:
-                raise ImportError(
-                    "AI upscaling requires Real-ESRGAN. Install with:\n"
-                    "pip install realesrgan basicsr facexlib gfpgan opencv-python"
-                )
+                error_msg = "AI upscaling requires Real-ESRGAN. Install with:\n"
+                error_msg += "pip install realesrgan basicsr facexlib gfpgan opencv-python"
+                if IMPORT_ERROR_MSG:
+                    error_msg += f"\n\nActual import error: {IMPORT_ERROR_MSG}"
+                raise ImportError(error_msg)
             self._init_ai_upscaler()
 
     def _init_ai_upscaler(self):
