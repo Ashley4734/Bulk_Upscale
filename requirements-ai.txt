@@ -2,8 +2,8 @@
 # Compatible versions of PyTorch and torchvision for basicsr 1.4.2
 
 # Core PyTorch packages (compatible versions)
-torch==2.0.1
-torchvision==0.15.2
+torch==2.2.0
+torchvision==0.17.0
 
 # Real-ESRGAN and dependencies
 realesrgan==0.3.0
