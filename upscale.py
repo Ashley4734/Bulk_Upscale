@@ -48,7 +48,7 @@ class ImageUpscaler:
 
     def __init__(self, scale_factor: float = 2.0, method: str = 'lanczos',
                  quality: int = 95, workers: int = 4, use_ai: bool = False,
-                 ai_model: str = 'realesrgan-x4'):
+                 ai_model: str = 'realesrgan-x4', ai_enhance_only: bool = False):
         """
         Initialize the upscaler.
 
@@ -59,12 +59,14 @@ class ImageUpscaler:
             workers: Number of parallel workers for processing
             use_ai: Use AI-based upscaling (requires Real-ESRGAN)
             ai_model: AI model to use ('realesrgan-x4', 'realesrgan-x2', 'realesr-animevideo')
+            ai_enhance_only: AI enhance without changing size (upscale then downscale back)
         """
         self.scale_factor = scale_factor
         self.method = RESAMPLING_METHODS.get(method.lower(), Image.Resampling.LANCZOS)
         self.quality = max(1, min(100, quality))
         self.use_ai = use_ai
         self.ai_model = ai_model
+        self.ai_enhance_only = ai_enhance_only
         self.upsampler = None
 
         # For AI upscaling, force single worker to avoid memory issues
@@ -173,6 +175,11 @@ class ImageUpscaler:
 
         new_height, new_width = output.shape[:2]
 
+        # If enhance_only mode, resize back to original dimensions
+        if self.ai_enhance_only:
+            output = cv2.resize(output, (original_width, original_height), interpolation=cv2.INTER_LANCZOS4)
+            new_height, new_width = original_height, original_width
+
         # Save the output
         if output_path.suffix.lower() in {'.jpg', '.jpeg'}:
             cv2.imwrite(str(output_path), output, [cv2.IMWRITE_JPEG_QUALITY, self.quality])
@@ -181,7 +188,10 @@ class ImageUpscaler:
         else:
             cv2.imwrite(str(output_path), output)
 
-        return True, f"✓ AI Upscaled: {input_path.name} ({original_width}x{original_height} → {new_width}x{new_height})"
+        if self.ai_enhance_only:
+            return True, f"✓ AI Enhanced: {input_path.name} ({original_width}x{original_height}, quality improved)"
+        else:
+            return True, f"✓ AI Upscaled: {input_path.name} ({original_width}x{original_height} → {new_width}x{new_height})"
 
     def _upscale_traditional(self, input_path: Path, output_path: Path) -> Tuple[bool, str]:
         """Upscale using traditional interpolation methods."""
@@ -246,8 +256,12 @@ class ImageUpscaler:
 
         print(f"Found {len(image_files)} image(s) to process")
         if self.use_ai:
-            print(f"Mode: AI Upscaling ({self.ai_model})")
-            print(f"Scale: {self.upsampler.scale}x (determined by model)")
+            if self.ai_enhance_only:
+                print(f"Mode: AI Enhancement ({self.ai_model})")
+                print(f"Enhancement: Keep original size, improve quality only")
+            else:
+                print(f"Mode: AI Upscaling ({self.ai_model})")
+                print(f"Scale: {self.upsampler.scale}x (determined by model)")
             print(f"Workers: {self.workers} (AI mode processes sequentially to avoid memory issues)")
         else:
             print(f"Mode: Traditional ({[k for k, v in RESAMPLING_METHODS.items() if v == self.method][0]})")
@@ -327,9 +341,11 @@ Examples:
                        help='Number of parallel workers (default: 4)')
     parser.add_argument('--ai', action='store_true',
                        help='Use AI-based upscaling (Real-ESRGAN) for better quality')
-    parser.add_argument('--ai-model', type=str, default='realesrgan-x4',
+    parser.add_argument('--ai-model', type=str, default='realesrgan-x2',
                        choices=['realesrgan-x4', 'realesrgan-x2', 'realesr-animevideo'],
-                       help='AI model to use (default: realesrgan-x4 for 4x upscale)')
+                       help='AI model to use (default: realesrgan-x2)')
+    parser.add_argument('--ai-enhance', action='store_true',
+                       help='AI enhance without changing size (keeps original dimensions)')
 
     args = parser.parse_args()
 
@@ -377,7 +393,8 @@ Examples:
         quality=args.quality,
         workers=args.workers,
         use_ai=args.ai,
-        ai_model=args.ai_model
+        ai_model=args.ai_model,
+        ai_enhance_only=args.ai_enhance
     )
 
     upscaler.process_directory(input_dir, output_dir, args.recursive)
